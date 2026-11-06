@@ -20,3 +20,21 @@ Run "api_DAP.py", "api_SSP.py" and "predict_price.py"
 
 ### 2. Quantile Regression model (not including solar power generation, electricity demand, and wind power generation forecasts as predictors)
 Run "predict_price_api.py".  
+
+
+## Reproducible UK research baseline (experimental)
+
+The original implementation is retained. A separate, leakage-conscious research pipeline evaluates historical half-hourly UK price targets with forward-chaining tests, quantile regression and a weekly-naive benchmark. It deliberately excludes realized demand, wind and solar covariates that cannot be verified as available at forecast issuance.
+
+Install dependencies and run from the repository root:
+
+```bash
+pip install pandas numpy scikit-learn
+python code/research_pipeline.py --target DA_Price --folds 2 --test-days 60 --iterations 35 --output results/research_uk_da
+python code/research_pipeline.py --target SS_Price --folds 2 --test-days 60 --iterations 35 --output results/research_uk_ss
+python -m unittest discover -s tests -v
+```
+
+The default dataset is `code/data/Energy_Data_20200920_20231027.csv`. Results are generated locally in the chosen output directory and include `predictions.csv`, `fold_metrics.csv`, `summary.json` and `source_audit.json`.
+
+**Research limitations:** This is not yet a reproduction of the complete HEFTCom2024 published methodology. New UK market sources and Tokyo/Japan data have not been integrated or validated. The assumed preceding-day issue time and 48-hour availability delay must be verified against each market's publication schedule. See [research status](docs/PROJECT_STATUS.md).
