@@ -46,8 +46,8 @@ def features(s, freq='30min'):
     idx = s.index
     df = pd.DataFrame({'target':s}, index=idx)
     hr = idx.hour + idx.minute/60
-    day = idx.dayofweek
-    year_day = idx.dayofyear
+    day = idx.day_of_week
+    year_day = idx.day_of_year
     for key, angle in [('hour', 2*np.pi*hr/24), ('dow',2*np.pi*day/7), ('year',2*np.pi*year_day/365.25)]:
         df[key+'_sin'] = np.sin(angle)
         df[key+'_cos'] = np.cos(angle)
@@ -62,7 +62,7 @@ def evaluate(s, out, train_days=500, test_days=90, folds=3, model='boosting', it
     df = features(s).dropna()
     if len(df)<(train_days+test_days)*48:
         raise ValueError('Not enough complete data for requested windows')
-    dates = df.index.normalize().unique()
+    dates = pd.DatetimeIndex(df.index).normalize().unique()
     # Nonoverlapping forward test windows, expanding training history.
     total = train_days + folds*test_days
     if len(dates)<total:
