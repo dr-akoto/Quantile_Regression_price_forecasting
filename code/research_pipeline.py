@@ -1,8 +1,10 @@
 """Auditable, market-agnostic, day-ahead probabilistic price forecasting.
 
 Strict assumption: forecasts for delivery day D issued at 12:00 UTC on D-1.
-Historical *actuals* must be at least 48 hours old relative to delivery time;
-48h and 168h lags are safe for every delivery slot under this convention.
+Assume historical actual prices become available 48 hours after delivery.
+Use only 7-day and 14-day historical lags, which are available by the
+12:00 UTC D-1 forecast issue under this assumption.
+Actual publication and revision timing must still be independently verified.
 External forecast covariates are excluded unless point-in-time vintages are supplied.
 """
 import argparse
@@ -52,8 +54,10 @@ def features(s, freq='30min'):
         df[key+'_sin'] = np.sin(angle)
         df[key+'_cos'] = np.cos(angle)
     df['weekend'] = (day>=5).astype(int)
-    # No same-day/previous-day actuals: day-ahead issue at noon previous day.
-    for lag in (96, 144, 336, 672):
+    # Conservative lags for forecasts issued at 12:00 UTC on D-1.
+    # Under a 48-hour publication delay, 2- and 3-day lags are not
+    # guaranteed to be available for every delivery slot.
+    for lag in (336, 672):
         df[f'lag_{lag}'] = s.shift(lag)
     df['weekly_change'] = df['lag_336']-df['lag_672']
     return df
