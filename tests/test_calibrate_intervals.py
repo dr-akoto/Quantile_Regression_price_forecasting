@@ -18,7 +18,7 @@ class CalibrationTests(unittest.TestCase):
         rows = []
         for day in pd.date_range('2023-01-01', periods=6, freq='D', tz='UTC'):
             issue = day - pd.Timedelta(hours=12)
-            for hour in (0, 12):
+            for hour in range(24):
                 rows.append({
                     'delivery_utc': str(day + pd.Timedelta(hours=hour)),
                     'forecast_issue_utc': str(issue),
@@ -36,18 +36,23 @@ class CalibrationTests(unittest.TestCase):
     def test_no_future_outcome_leakage(self):
         rows = []
         for day in pd.date_range('2023-01-01', periods=6, freq='D', tz='UTC'):
-            rows.append({
-                'delivery_utc': str(day),
-                'forecast_issue_utc': str(day - pd.Timedelta(hours=12)),
-                'actual': 15., 'q0.1': 0., 'q0.9': 10.
-            })
+            for hour in range(24):
+                rows.append({
+                    'delivery_utc': str(day + pd.Timedelta(hours=hour)),
+                    'forecast_issue_utc': str(day - pd.Timedelta(hours=12)),
+                    'actual': 15., 'q0.1': 0., 'q0.9': 10.
+                })
         df = pd.DataFrame(rows)
         base, _ = calibrate(df, warmup_days=3, window_days=3)
         altered = df.copy()
-        altered.loc[altered.index >= 3, 'actual'] = 100000
+        altered.loc[altered.index >= 3 * 24, 'actual'] = 100000
         changed, _ = calibrate(altered, warmup_days=3, window_days=3)
         self.assertEqual(base.iloc[0].calibration_radius,
                          changed.iloc[0].calibration_radius)
+
+    def test_insufficient_calibration_observations_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'Insufficient calibration'):
+            conformal_radius([1., 2., 3.], alpha=.2)
 
 
 if __name__ == '__main__':
