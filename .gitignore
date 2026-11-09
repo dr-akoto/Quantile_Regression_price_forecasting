@@ -1,0 +1,13 @@
+# Python cache files
+__pycache__/
+*.pyc
+
+# Forecasting experiment results
+results/
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment variables
+.env
